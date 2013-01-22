@@ -1,5 +1,6 @@
 class UsersController < ApplicationController
 	before_filter :signed_in_user, 	only: [:index, :edit, :update, :destroy]
+	before_filter :registered_user,	only: [:new, :create]
 	before_filter :correct_user,	only: [:edit, :update]
 	before_filter :admin_user,		only: :destroy
 
@@ -43,11 +44,15 @@ class UsersController < ApplicationController
   	end
 
   	def destroy
-  		User.find(params[:id]).destroy
-  		flash[:success] = "User destroyed."
+  		user = User.find(params[:id])
+  		unless current_user?(user)
+  			user.destroy
+	  		flash[:success] = "User destroyed."
+  		else
+  			flash[:error] = "Cannot delete self."
+  		end
   		redirect_to users_url
   	end
-
 
   	private
 
@@ -56,6 +61,10 @@ class UsersController < ApplicationController
   				store_location
 	  			redirect_to signin_url, notice: "Please sign in." unless signed_in?
 	  		end
+  		end
+
+  		def registered_user
+  			redirect_to user_path(current_user) if signed_in?
   		end
 
   		def correct_user

@@ -25,6 +25,11 @@ describe "Authentication" do
 				before { click_link "Home" }
 				it { should_not have_selector('div.alert.alert-error') }
 			end
+
+			# should not have settings or profile links when not signed in
+			it { should_not have_link('Profile') }
+			it { should_not have_link('Settings') }
+
 		end
 
 		describe "with valid information" do
@@ -76,6 +81,18 @@ describe "Authentication" do
 					it "should render the desired protected page" do
 						page.should have_selector('title', text: 'Edit user')
 					end
+
+					describe "when signing in again" do
+						before do
+							delete signout_path
+							visit signin_path
+							valid_signin(user)
+						end
+
+						it "should render the default (profile) page" do
+							page.should have_selector('title', text: user.name)
+						end
+					end
 				end
 			end
 
@@ -122,6 +139,17 @@ describe "Authentication" do
 			describe "submitting a DELETE request to the Users#destroy action" do
 				before { delete user_path(user) }
 				specify { response.should redirect_to(root_path) }
+			end
+		end
+
+		describe "as admin user" do
+			let(:admin) { FactoryGirl.create(:user) }
+			before { sign_in admin }
+
+			describe "attempting to destroy self" do
+				before { delete user_path(admin) }
+				specify { response.should redirect_to(root_path) }
+				it { should_not have_selector('div.alert.alert-error') }
 			end
 		end
 	end
